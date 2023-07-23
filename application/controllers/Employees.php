@@ -1,29 +1,30 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
-class Employees extends CI_Controller {
+class Employees extends CI_Controller
+{
 
-    public function __construct() {
-		parent::__construct();
-		date_default_timezone_set('Asia/Manila');
-		$this->load->model('Crud_model');
-		
+    public function __construct()
+    {
+        parent::__construct();
+        date_default_timezone_set('Asia/Manila');
+        $this->load->model('Crud_model');
     }
-    
-	public function index()
-	{
-        $data['employees'] = $this->Crud_model->fetch_data('employees','','','','');
-		$this->load->view('employee',$data);
+
+    public function index()
+    {
+        $data['employees'] = $this->Crud_model->fetch_data('employees', '', '', '', '');
+        $this->load->view('employee', $data);
     }
 
     function generate_qrcode($data)
-	{
+    {
         /* Load QR Code Library */
         $this->load->library('ciqrcode');
-        
+
         /* Data */
         $hex_data   = bin2hex($data);
-        $save_name  = $hex_data.'.png';
+        $save_name  = $hex_data . '.png';
 
         /* QR Code File Directory Initialize */
         $dir = 'assets/media/qrcode/';
@@ -36,41 +37,42 @@ class Employees extends CI_Controller {
         $config['imagedir']     = $dir;
         $config['quality']      = true;
         $config['size']         = '1024';
-        $config['black']        = array(255,255,255);
-        $config['white']        = array(255,255,255);
+        $config['black']        = array(255, 255, 255);
+        $config['white']        = array(255, 255, 255);
         $this->ciqrcode->initialize($config);
-  
+
         /* QR Data  */
         $params['data']     = $data;
         $params['level']    = 'L';
         $params['size']     = 10;
-        $params['savename'] = FCPATH.$config['imagedir']. $save_name;
-        
+        $params['savename'] = FCPATH . $config['imagedir'] . $save_name;
+
         $this->ciqrcode->generate($params);
 
         /* Return Data */
         $return = array(
             'content' => $data,
-            'file'    => $dir. $save_name
+            'file'    => $dir . $save_name
         );
         return $return;
     }
-    
-    public function add_employee(){
+
+    public function add_employee()
+    {
 
         // if($_POST)
-		// {
-            $fname = ucwords($this->input->post('fname'));
-            $lname = ucwords($this->input->post('lname'));
-            $created_by = 1;
-            
-           
-            $qr_data = $fname.$lname;
-            $qr = $this->generate_qrcode( $qr_data );
-            $qrfile = $qr['file'];
-            $data = array('first_name'=>$fname,'last_name'=>$lname,'created_by'=>$created_by, 'file' => $qrfile);
-            $this->Crud_model->insert('employees',$data);
-           echo 'success';
+        // {
+        $fname = ucwords($this->input->post('fname'));
+        $lname = ucwords($this->input->post('lname'));
+        $created_by = 1;
+
+
+        $qr_data = $fname . $lname;
+        $qr = $this->generate_qrcode($qr_data);
+        $qrfile = $qr['file'];
+        $data = array('first_name' => $fname, 'last_name' => $lname, 'created_by' => $created_by, 'file' => $qrfile);
+        $this->Crud_model->insert('employees', $data);
+        echo 'success';
         // }
         //  else
         //  {
@@ -78,5 +80,30 @@ class Employees extends CI_Controller {
         //  }
     }
 
+    public function edit_employee()
+    {
+        $fname = ucwords($this->input->post('fname'));
+        $lname = ucwords($this->input->post('lname'));
+        $id = $this->input->post('id');
 
+        $filter = array('id' => $id);
+        $data = array('first_name' => $fname, 'last_name' => $lname,);
+        $this->Crud_model->update('employees', $data, $filter);
+        echo 'success';
+    }
+
+    public function delete_employee() {
+        $id = $this->uri->segment(3);
+        $filter = array('id' => $id);
+        $res = $this->Crud_model->delete('employees', $filter);
+        redirect('/employees');
+    }
+
+    public function view_timesheets(){
+        $order = "id DESC";
+        $id = $this->uri->segment(3);
+        $filter = array('employee_id' => $id);
+        $data['timesheets'] = $this->Crud_model->fetch_data('records', $filter,"","", $order);
+        $this->load->view('timesheets', $data);
+    }
 }
